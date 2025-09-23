@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/token';
+import { verifyAccessToken } from '../utils/token';
 
 interface AuthRequest extends Request {
   user?: {
@@ -21,7 +21,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 
     const token = authHeader.substring(7);
-    const decoded = verifyToken(token) as any;
+    const decoded = verifyAccessToken(token) as any;
     
     req.user = {
       id: decoded.id,

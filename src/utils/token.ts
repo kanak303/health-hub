@@ -22,3 +22,4 @@ export const verifyAccessToken = (token: string): string | JwtPayload => {
 export const verifyRefreshToken = (token: string): string | JwtPayload => {
   return jwt.verify(token, REFRESH_TOKEN_SECRET);
 };
+

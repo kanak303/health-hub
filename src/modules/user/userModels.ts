@@ -9,11 +9,11 @@ User.init(
     email: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.ENUM("admin", "doctor", "patient"), allowNull: false },
-    refreshToken: { type: DataTypes.TEXT, allowNull: true },
+    isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
+    otp: { type: DataTypes.STRING, allowNull: true },
+    otpExpires: { type: DataTypes.DATE, allowNull: true },
   },
-  { sequelize, modelName: "User" }
+  { sequelize, modelName: "User", timestamps: false }
 );
 
-export default User; 
-
-
+export default User;
