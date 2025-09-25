@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { User } from "../modules/user/userModels.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import { setOTP, getOTP, deleteOTP } from "../config/redis.js";
@@ -74,7 +75,14 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       });
     }
 
-    const match = await bcrypt.compare(password, user.getDataValue("password"));
+    const storedPassword = user.getDataValue("password");
+    console.log(`Login attempt for: ${email}`);
+    console.log(`Stored password hash: ${storedPassword}`);
+    console.log(`Provided password: ${password}`);
+    
+    const match = await bcrypt.compare(password, storedPassword);
+    console.log(`Password match result: ${match}`);
+    
     if (!match) {
       return res.status(401).json({
         success: false,
@@ -95,7 +103,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         await sendEmailOTP(email, newOtp);
         console.log(`Email sent to ${email}`);
       } catch (emailError) {
-        console.log(`Email sending failed: ${emailError.message}`);
+        console.log(`Email sending failed: ${(emailError as Error).message}`);
         console.log(`Use OTP from console: ${newOtp}`);
       }
       
@@ -108,7 +116,7 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       });
     }
 
-    // If OTP provided, verify it from Redis
+    // If OTP provide then verify it from Redis
     const redisKey = `otp:${user.getDataValue("id")}`;
     const storedOTP = await getOTP(redisKey);
     console.log(`User ID: ${user.getDataValue("id")}`);
@@ -150,6 +158,98 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
         accessToken,
         refreshToken
       }
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
+// Forgot Password 
+export const forgotPassword = async (req: Request, res: Response): Promise<Response> => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Generate OTP for reset
+    const otp = crypto.randomInt(100000, 999999).toString();
+    user.resetToken = otp;
+    user.resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    await user.save();
+
+    // Send OTP email
+    await sendEmailOTP(email, otp);
+
+    return res.status(200).json({ success: true, message: "OTP sent to email for password reset" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+  }
+};
+
+//Reset Password 
+export const resetPassword = async (req: Request, res: Response): Promise<Response> => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Email, OTP, and new password are required" 
+    });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Debug logging
+    console.log(`Stored resetToken: '${user.resetToken}'`);
+    console.log(`Provided OTP: '${otp}'`);
+    console.log(`OTP type: ${typeof otp}`);
+    console.log(`resetToken type: ${typeof user.resetToken}`);
+    console.log(`Comparison result: ${user.resetToken === String(otp).trim()}`);
+
+    // Validate OTP
+    if (!user.resetToken || user.resetToken !== String(otp).trim()) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return res.status(400).json({ success: false, message: "OTP expired" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    console.log(`New password hash: ${hashedPassword}`);
+    
+    user.password = hashedPassword;
+
+    // Clear OTP fields
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    
+    await user.save();
+    console.log(`Password updated for user: ${email}`);
+
+    return res.status(200).json({ success: true, message: "Password reset successfully" });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+  }
+};
+
+
+// Logout
+export const logout = async (req: Request, res: Response): Promise<Response> => {
+  try {
+ 
+    return res.json({
+      success: true,
+      message: "User logged out successfully"
     });
   } catch (error: any) {
     return res.status(500).json({

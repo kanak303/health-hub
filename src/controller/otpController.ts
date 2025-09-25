@@ -38,12 +38,12 @@ export const sendOTP = async (req: Request, res: Response): Promise<Response> =>
     // Store OTP in Redis with 30 minutes expiration
     await setOTP(redisKey, otp, 1800);
     
-    // Send OTP via email (optional - skip if email not configured)
+    // Send OTP via email 
     try {
       await sendEmailOTP(user.getDataValue("email"), otp);
       console.log(`Email sent to ${user.getDataValue("email")}`);
-    } catch (emailError) {
-      console.log(`Email sending failed: ${emailError.message}`);
+    } catch (emailError ) {
+      console.log(`Email sending failed: ${(emailError as Error).message}`);
       console.log(`Use OTP from console: ${otp}`);
     }
 
@@ -94,14 +94,12 @@ export const verifyOTP = async (req: Request, res: Response): Promise<Response> 
     const storedOTP = await getOTP(redisKey);
     const providedOTP = String(otp).trim();
     
-    console.log(`\n=== OTP VERIFICATION DEBUG ===`);
     console.log(`User ID: ${decoded.id}`);
     console.log(`Redis Key: ${redisKey}`);
     console.log(`Stored OTP: '${storedOTP}' (length: ${storedOTP?.length || 0})`);
     console.log(`Provided OTP: '${providedOTP}' (length: ${providedOTP.length})`);
     console.log(`Stored is null: ${storedOTP === null}`);
     console.log(`Exact match: ${storedOTP === providedOTP}`);
-    console.log(`===============================\n`);
     
     if (!storedOTP) {
       return res.status(400).json({

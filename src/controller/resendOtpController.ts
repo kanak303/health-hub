@@ -43,7 +43,7 @@ export const resendOTP = async (req: Request, res: Response): Promise<Response> 
       await sendEmailOTP(email, otp);
       console.log(`Email sent to ${email}`);
     } catch (emailError) {
-      console.log(`Email sending failed: ${emailError.message}`);
+      console.log(`Email sending failed: ${(emailError as Error).message}`);
       console.log(`Use OTP from console: ${otp}`);
     }
     

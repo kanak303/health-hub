@@ -1,0 +1,22 @@
+{
+  "development": {
+    "username": "healthhub",
+    "password": "123456789",
+    "database": "health-hub",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "healthhub",
+    "password": "123456789",
+    "database": "health-hub-test",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres"
+  }
+}

@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import  nodemailer from "nodemailer";
 
 // Transporter configuration
 export const transporter = nodemailer.createTransport({
@@ -15,13 +15,27 @@ export const transporter = nodemailer.createTransport({
 // Function to send OTP email
 export const sendEmailOTP = async (email: string, otp: string) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"HealthHub Team" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Your HealthHub OTP",
-    html: `<h2>HealthHub OTP</h2><p>Your OTP: <strong>${otp}</strong></p><p>Expires in 30 minutes.</p>`,
-    text: `Your HealthHub OTP is: ${otp}. It will expire in 30 minutes.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+        <h1 style="color: #4CAF50;">HealthHub.com</h1>
+        <h2 style="color: #555;">Your OTP Code</h2>
+        <p style="font-size: 18px;">Use the OTP below to complete your action:</p>
+        <p style="font-size: 24px; font-weight: bold; color: #000; background-color: #f2f2f2; padding: 10px; display: inline-block; border-radius: 5px;">${otp}</p>
+        <p style="margin-top: 20px; font-size: 14px; color: #888;">
+          This OTP will expire in <strong>30 minutes</strong>.
+        </p>
+        <hr style="margin: 20px 0;">
+        <p style="font-size: 12px; color: #aaa;">
+          If you did not request this, please ignore this email.
+        </p>
+      </div>
+    `,
+    text: `HealthHub OTP: ${otp}. It will expire in 30 minutes. If you did not request this, please ignore this email.`,
   };
-
+  
   const result = await transporter.sendMail(mailOptions);
   console.log('Email sent:', result.messageId);
   return result;
