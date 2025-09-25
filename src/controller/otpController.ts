@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { User } from "../modules/user/userModels.js";
 import { verifyAccessToken } from "../utils/token.js";
+import { setOTP, getOTP, deleteOTP } from "../config/redis.js";
+import { sendEmailOTP } from "../config/mail.js";
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -29,16 +31,25 @@ export const sendOTP = async (req: Request, res: Response): Promise<Response> =>
     }
 
     const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-
-    await user.update({ otp, otpExpires });
-
-    console.log(`OTP for user ${decoded.id}: ${otp}`);
+    const redisKey = `otp:${decoded.id}`;
+    
+    console.log(`Generated OTP for ${user.getDataValue("email")}: ${otp}`);
+    
+    // Store OTP in Redis with 30 minutes expiration
+    await setOTP(redisKey, otp, 1800);
+    
+    // Send OTP via email (optional - skip if email not configured)
+    try {
+      await sendEmailOTP(user.getDataValue("email"), otp);
+      console.log(`Email sent to ${user.getDataValue("email")}`);
+    } catch (emailError) {
+      console.log(`Email sending failed: ${emailError.message}`);
+      console.log(`Use OTP from console: ${otp}`);
+    }
 
     return res.json({
       success: true,
-      message: "OTP sent successfully",
-      otp: otp
+      message: "OTP sent successfully to your email"
     });
   } catch (error: any) {
     return res.status(500).json({
@@ -79,18 +90,36 @@ export const verifyOTP = async (req: Request, res: Response): Promise<Response> 
       });
     }
 
-    if (user.getDataValue("otp") !== otp) {
+    const redisKey = `otp:${decoded.id}`;
+    const storedOTP = await getOTP(redisKey);
+    const providedOTP = String(otp).trim();
+    
+    console.log(`\n=== OTP VERIFICATION DEBUG ===`);
+    console.log(`User ID: ${decoded.id}`);
+    console.log(`Redis Key: ${redisKey}`);
+    console.log(`Stored OTP: '${storedOTP}' (length: ${storedOTP?.length || 0})`);
+    console.log(`Provided OTP: '${providedOTP}' (length: ${providedOTP.length})`);
+    console.log(`Stored is null: ${storedOTP === null}`);
+    console.log(`Exact match: ${storedOTP === providedOTP}`);
+    console.log(`===============================\n`);
+    
+    if (!storedOTP) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired or not found"
+      });
+    }
+    
+    if (storedOTP !== providedOTP) {
       return res.status(400).json({
         success: false,
         message: "Invalid OTP"
       });
     }
 
-    await user.update({ 
-      isVerified: true, 
-      otp: null, 
-      otpExpires: null 
-    });
+    // Delete OTP from Redis and update user verification status
+    await deleteOTP(redisKey);
+    await user.update({ isVerified: true });
 
     return res.json({
       success: true,

@@ -10,8 +10,6 @@ User.init(
     password: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.ENUM("admin", "doctor", "patient"), allowNull: false },
     isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
-    otp: { type: DataTypes.STRING, allowNull: true },
-    otpExpires: { type: DataTypes.DATE, allowNull: true },
   },
   { sequelize, modelName: "User", timestamps: false }
 );

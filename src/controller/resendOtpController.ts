@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { User } from "../modules/user/userModels.js";
+import { setOTP } from "../config/redis.js";
+import { sendEmailOTP } from "../config/mail.js";
 
 export const resendOTP = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -31,15 +33,25 @@ export const resendOTP = async (req: Request, res: Response): Promise<Response> 
 
     // Generate new OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 30 * 60 * 1000);
+    const redisKey = `otp:${user.getDataValue("id")}`;
     
-    await user.update({ otp, otpExpires });
+    // Store OTP in Redis with 30 minutes expiration
+    await setOTP(redisKey, otp, 1800);
     
-    console.log(`New OTP for ${email}: ${otp}`);
+    // Send OTP via email 
+    try {
+      await sendEmailOTP(email, otp);
+      console.log(`Email sent to ${email}`);
+    } catch (emailError) {
+      console.log(`Email sending failed: ${emailError.message}`);
+      console.log(`Use OTP from console: ${otp}`);
+    }
+    
+    console.log(`OTP for ${email}: ${otp}`);
 
     return res.json({
       success: true,
-      message: "New OTP sent successfully"
+      message: "New OTP sent successfully to your email"
     });
   } catch (error: any) {
     return res.status(500).json({
