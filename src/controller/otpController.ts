@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { User } from "../modules/user/userModels.js";
-import { verifyAccessToken } from "../utils/token.js";
-import { setOTP, getOTP, deleteOTP } from "../config/redis.js";
-import { sendEmailOTP } from "../config/mail.js";
+import { User } from "../modules/user/userModels";
+import { verifyAccessToken } from "../utils/token";
+import { setOTP, getOTP, deleteOTP } from "../config/redis";
+import { sendEmailOTP } from "../config/mail";
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();

@@ -1,8 +1,8 @@
 import express from 'express';
 import { register, login, forgotPassword, resetPassword, logout } from '../controller/authController.js';
-import { refreshToken } from '../controller/refreshController.js';
-import { resendOTP } from '../controller/resendOtpController.js';
-import { sendOTP, verifyOTP } from '../controller/otpController.js';
+import { refreshToken } from '../controller/refreshController';
+import { resendOTP } from '../controller/resendOtpController';
+import { sendOTP, verifyOTP } from '../controller/otpController';
 
 const router = express.Router();
 // login signup

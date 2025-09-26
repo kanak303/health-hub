@@ -9,9 +9,8 @@ export class User extends Model {
   public password!: string;
   public role!: "admin" | "doctor" | "patient";
   public isVerified!: boolean;
-  public resetToken?: string;
-  public resetTokenExpiry?: Date;
-
+  public resetToken!: string | null;
+  public resetTokenExpiry!: Date | null;
 }
 User.init(
   {

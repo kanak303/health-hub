@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { User } from "../modules/user/userModels.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
-import { setOTP, getOTP, deleteOTP } from "../config/redis.js";
-import { sendEmailOTP } from "../config/mail.js";
+import { User } from "../modules/user/userModels";
+import { generateAccessToken, generateRefreshToken } from "../utils/token";
+import { setOTP, getOTP, deleteOTP } from "../config/redis";
+import { sendEmailOTP } from "../config/mail";
 
 export const register = async (req: Request, res: Response): Promise<Response> => {
   try {
@@ -179,7 +179,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
 
     // Generate OTP for reset
     const otp = crypto.randomInt(100000, 999999).toString();
-    user.resetToken = otp;
+    // user.resetToken = otp;
     user.resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
     await user.save();
 

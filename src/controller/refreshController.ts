@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { User } from "../modules/user/userModels.js";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/token.js";
+import { User } from "../modules/user/userModels";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/token";
 
 export const refreshToken = async (req: Request, res: Response): Promise<Response> => {
   try {

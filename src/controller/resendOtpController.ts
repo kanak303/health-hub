@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { User } from "../modules/user/userModels.js";
-import { setOTP } from "../config/redis.js";
-import { sendEmailOTP } from "../config/mail.js";
+import { User } from "../modules/user/userModels";
+import { setOTP } from "../config/redis";
+import { sendEmailOTP } from "../config/mail";
 
 export const resendOTP = async (req: Request, res: Response): Promise<Response> => {
   try {

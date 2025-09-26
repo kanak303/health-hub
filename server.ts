@@ -2,8 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import sequelize from "./src/config/database";
 import User from "./src/modules/user/userModels";
-import authRoutes from "./src/route/authRoutes.js";
-import { connectRedis } from "./src/config/redis.js";
+import authRoutes from "./src/route/authRoutes";
+import { connectRedis } from "./src/config/redis";
 
 dotenv.config();
 
@@ -34,7 +34,7 @@ app.get("/", async (req, res) => {
       await setOTP('test:connection', 'working', 60);
       const testValue = await getOTP('test:connection');
       console.log(`Redis test: ${testValue === 'working' ? 'PASSED' : 'FAILED'}`);
-    } catch (redisError) {
+    } catch (redisError:any) {
       console.log('Redis test FAILED:', redisError.message);
     }
     
