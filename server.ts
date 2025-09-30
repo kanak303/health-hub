@@ -5,6 +5,7 @@ import User from "./src/modules/user/userModels";
 import authRoutes from "./src/route/authRoutes";
 
 import doctorRoutes from './src/route/doctorRoutes';
+import slotRoutes from "./src/route/slotRoutes";
 
 import { connectRedis } from "./src/config/redis";
 
@@ -18,6 +19,8 @@ const PORT =  3000;
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
+
+app.use("/api/slots", slotRoutes);
 
 app.get("/", async (req, res) => {
   const users = await User.findAll();
