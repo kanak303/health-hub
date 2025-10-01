@@ -10,12 +10,52 @@ export default {
       name: { type: Sequelize.STRING, allowNull: false },
       email: { type: Sequelize.STRING, allowNull: false, unique: true },
       password: { type: Sequelize.STRING, allowNull: false },
-      role: { type: Sequelize.ENUM("admin", "doctor", "patient"), allowNull: false },
+      role: { type: Sequelize.ENUM("admin", "doctor", "patient", "clinic_admin"), allowNull: false },
       createdAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
       updatedAt: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
 
     const tables = await queryInterface.showAllTables();
+    
+    if (!tables.includes('Clinics')) {
+      await queryInterface.createTable('Clinics', {
+        id: {
+          type: Sequelize.UUID,
+          defaultValue: Sequelize.UUIDV4,
+          primaryKey: true
+        },
+        name: {
+          type: Sequelize.STRING,
+          allowNull: false
+        },
+        slug: {
+          type: Sequelize.STRING,
+          allowNull: false,
+          unique: true
+        },
+        address: {
+          type: Sequelize.STRING,
+          allowNull: true
+        },
+        phone: {
+          type: Sequelize.STRING,
+          allowNull: true
+        },
+        deletedAt: {
+          type: Sequelize.DATE,
+          allowNull: true
+        },
+        createdAt: {
+          type: Sequelize.DATE,
+          allowNull: false
+        },
+        updatedAt: {
+          type: Sequelize.DATE,
+          allowNull: false
+        }
+      });
+    }
+
     if (!tables.includes('Slots')) {
       await queryInterface.createTable('Slots', {
         id: {
@@ -81,6 +121,9 @@ export default {
     const tables = await queryInterface.showAllTables();
     if (tables.includes('Slots')) {
       await queryInterface.dropTable("Slots");
+    }
+    if (tables.includes('Clinics')) {
+      await queryInterface.dropTable("Clinics");
     }
     if (tables.includes('Users')) {
       await queryInterface.dropTable("Users");

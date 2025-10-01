@@ -3,9 +3,9 @@ import dotenv from "dotenv";
 import sequelize from "./src/config/database";
 import User from "./src/modules/user/userModels";
 import authRoutes from "./src/route/authRoutes";
-
 import doctorRoutes from './src/route/doctorRoutes';
 import slotRoutes from "./src/route/slotRoutes";
+import clinicRoutes from "./src/route/clinicRoutes";
 
 import { connectRedis } from "./src/config/redis";
 
@@ -19,8 +19,8 @@ const PORT =  3000;
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
-
 app.use("/api/slots", slotRoutes);
+app.use("/api/clinics", clinicRoutes);
 
 app.get("/", async (req, res) => {
   const users = await User.findAll();
