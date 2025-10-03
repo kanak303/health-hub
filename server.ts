@@ -6,7 +6,8 @@ import authRoutes from "./src/route/authRoutes";
 import doctorRoutes from './src/route/doctorRoutes';
 import slotRoutes from "./src/route/slotRoutes";
 import clinicRoutes from "./src/route/clinicRoutes";
-
+import bookingRoutes from "./src/route/bookingRoutes";
+import slotHoldRoutes from "./src/route/slotHoldRoutes";
 import { connectRedis } from "./src/config/redis";
 
 dotenv.config();
@@ -21,6 +22,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use("/api/slots", slotRoutes);
 app.use("/api/clinics", clinicRoutes);
+app.use("/api/booking", bookingRoutes);
+app.use("/api/slots", slotHoldRoutes);
 
 app.get("/", async (req, res) => {
   const users = await User.findAll();
@@ -32,6 +35,8 @@ app.get("/", async (req, res) => {
   try {
     await sequelize.authenticate();
     console.log("Database connected Successfully !");
+    
+
     
     await connectRedis();
     
