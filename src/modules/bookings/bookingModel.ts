@@ -9,6 +9,9 @@ export interface BookingAttributes {
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   bookingDate: Date;
   notes?: string;
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  transactionId?: string;
+  amount: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -21,6 +24,9 @@ class Booking extends Model<BookingAttributes> implements BookingAttributes {
   public status!: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   public bookingDate!: Date;
   public notes?: string;
+  public paymentStatus!: 'pending' | 'paid' | 'failed' | 'refunded';
+  public transactionId?: string;
+  public amount!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -55,6 +61,18 @@ Booking.init(
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    paymentStatus: {
+      type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'),
+      defaultValue: 'pending',
+    },
+    transactionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
     },
   },
   {

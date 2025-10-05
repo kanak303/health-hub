@@ -33,6 +33,20 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true,
       },
+      paymentStatus: {
+        type: Sequelize.ENUM('pending', 'paid', 'failed', 'refunded'),
+        defaultValue: 'pending',
+        allowNull: false
+      },
+      transactionId: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      amount: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

@@ -1,4 +1,3 @@
-import { authenticate } from './../middleware/auth';
 import { Router } from "express";
 import { createClinic, deleteClinic, getAllClinics, getClinic, updateClinic } from "../controller/clinicController";
 
