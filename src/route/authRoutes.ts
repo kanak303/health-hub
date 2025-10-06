@@ -1,8 +1,15 @@
 import express from 'express';
-import { register, login, forgotPassword, resetPassword, logout } from '../controller/authController.js';
-import { refreshToken } from '../controller/refreshController';
-import { resendOTP } from '../controller/resendOtpController';
-import { sendOTP, verifyOTP } from '../controller/otpController';
+import { 
+  register, 
+  login, 
+  sendOTP, 
+  verifyOTP, 
+  resendOTP, 
+  refreshToken, 
+  forgotPassword, 
+  resetPassword, 
+  logout 
+} from '../controller/authController';
 
 const router = express.Router();
 // login signup

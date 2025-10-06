@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { User } from "../modules/user/userModels";
-import { generateAccessToken, generateRefreshToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyAccessToken, verifyRefreshToken } from "../utils/token";
 import { setOTP, getOTP, deleteOTP } from "../config/redis";
 import { sendEmailOTP } from "../config/mail";
 
@@ -116,15 +116,16 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       });
     }
 
-    // If OTP provide then verify it from Redis
+    // If OTP provided then verify it from Redis
     const redisKey = `otp:${user.getDataValue("id")}`;
     const storedOTP = await getOTP(redisKey);
+    const providedOTP = String(otp).trim();
+    
     console.log(`User ID: ${user.getDataValue("id")}`);
     console.log(`Redis Key: ${redisKey}`);
-    console.log(`Stored OTP: '${storedOTP}'`);
-    console.log(`Provided OTP: '${String(otp).trim()}'`);
-    console.log(`Match: ${storedOTP === String(otp).trim()}`);
-    
+    console.log(`Stored OTP: '${storedOTP}' (type: ${typeof storedOTP}, length: ${storedOTP?.length || 0})`);
+    console.log(`Provided OTP: '${providedOTP}' (type: ${typeof providedOTP}, length: ${providedOTP.length})`);
+    console.log(`Exact match: ${storedOTP === providedOTP}`);
     
     if (!storedOTP) {
       return res.status(400).json({
@@ -133,10 +134,16 @@ export const login = async (req: Request, res: Response): Promise<Response> => {
       });
     }
     
-    if (storedOTP !== String(otp).trim()) {
+    if (storedOTP !== providedOTP) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP"
+        message: "Invalid OTP",
+        debug: {
+          stored: storedOTP,
+          provided: providedOTP,
+          storedLength: storedOTP?.length,
+          providedLength: providedOTP.length
+        }
       });
     }
 
@@ -243,10 +250,210 @@ export const resetPassword = async (req: Request, res: Response): Promise<Respon
 };
 
 
+// Send OTP (requires authentication)
+export const sendOTP = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Access token required"
+      });
+    }
+
+    const decoded = verifyAccessToken(token) as any;
+    const user = await User.findOne({ where: { id: decoded.id } });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redisKey = `otp:${decoded.id}`;
+    
+    await setOTP(redisKey, otp, 1800);
+    
+    try {
+      await sendEmailOTP(user.getDataValue("email"), otp);
+    } catch (emailError) {
+      console.log(`Email sending failed: ${(emailError as Error).message}`);
+      console.log(`Use OTP from console: ${otp}`);
+    }
+
+    return res.json({
+      success: true,
+      message: "OTP sent successfully to your email"
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Verify OTP (requires authentication)
+export const verifyOTP = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { otp } = req.body;
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Access token required"
+      });
+    }
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is required"
+      });
+    }
+
+    const decoded = verifyAccessToken(token) as any;
+    const user = await User.findOne({ where: { id: decoded.id } });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const redisKey = `otp:${decoded.id}`;
+    const storedOTP = await getOTP(redisKey);
+    
+    if (!storedOTP || storedOTP !== String(otp).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: storedOTP ? "Invalid OTP" : "OTP expired or not found"
+      });
+    }
+
+    await deleteOTP(redisKey);
+
+    return res.json({
+      success: true,
+      message: "OTP verified successfully"
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+// Resend OTP
+export const resendOTP = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required"
+      });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
+
+    const match = await bcrypt.compare(password, user.getDataValue("password"));
+    if (!match) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redisKey = `otp:${user.getDataValue("id")}`;
+    
+    await setOTP(redisKey, otp, 1800);
+    
+    try {
+      await sendEmailOTP(email, otp);
+    } catch (emailError) {
+      console.log(`Email sending failed: ${(emailError as Error).message}`);
+      console.log(`Use OTP from console: ${otp}`);
+    }
+
+    return res.json({
+      success: true,
+      message: "New OTP sent successfully to your email"
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+// Refresh Token
+export const refreshToken = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token required"
+      });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken) as any;
+    const user = await User.findOne({ where: { id: decoded.id } });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token"
+      });
+    }
+
+    const userPayload = {
+      id: user.getDataValue("id"),
+      email: user.getDataValue("email"),
+      role: user.getDataValue("role")
+    };
+    
+    const newAccessToken = generateAccessToken(userPayload);
+    const newRefreshToken = generateRefreshToken(userPayload);
+
+    return res.json({
+      success: true,
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken
+      }
+    });
+  } catch (error: any) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired refresh token"
+    });
+  }
+};
+
 // Logout
 export const logout = async (req: Request, res: Response): Promise<Response> => {
   try {
- 
     return res.json({
       success: true,
       message: "User logged out successfully"

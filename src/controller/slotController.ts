@@ -90,15 +90,26 @@ export const getSlots = async (req: Request, res: Response) => {
   try {
     const { doctorId, date } = req.query;
 
+    const whereClause: any = { status: "available" };
+    
+    if (doctorId) {
+      whereClause.doctorId = doctorId as string;
+    }
+    
+    if (date) {
+      whereClause.date = date as string;
+    }
+
     const available = await Slot.findAll({
-      where: {
-        doctorId: doctorId as string,
-        date: date as string,
-        status: "available"
-      }
+      where: whereClause
     });
 
-    res.json({ doctorId, date, availableSlots: available });
+    res.json({ 
+      success: true,
+      filters: { doctorId, date },
+      availableSlots: available,
+      total: available.length
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
