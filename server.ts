@@ -9,6 +9,7 @@ import clinicRoutes from "./src/route/clinicRoutes";
 import bookingRoutes from "./src/route/bookingRoutes";
 import slotHoldRoutes from "./src/route/slotHoldRoutes";
 import { connectRedis } from "./src/config/redis";
+import { swaggerUi, specs } from "./src/docs/swagger";
 
 dotenv.config();
 
@@ -24,6 +25,9 @@ app.use("/api/slots", slotRoutes);
 app.use("/api/clinics", clinicRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/slots", slotHoldRoutes);
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.get("/", async (req, res) => {
   const users = await User.findAll();
