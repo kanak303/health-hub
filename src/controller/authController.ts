@@ -8,9 +8,9 @@ import { sendEmailOTP } from "../config/mail";
 
 export const register = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -31,7 +31,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       name,
       email,
       password: hashedPassword,
-      role,
+      role: 'patient',
     });
 
     return res.status(201).json({
