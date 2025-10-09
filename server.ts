@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import sequelize from "./src/config/database";
-import User from "./src/modules/user/userModels";
+import { User } from "./src/modules/user/userModels";
 import authRoutes from "./src/route/authRoutes";
 import doctorRoutes from './src/route/doctorRoutes';
 import slotRoutes from "./src/route/slotRoutes";
