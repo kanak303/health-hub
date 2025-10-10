@@ -8,6 +8,7 @@ import {
 } from '../controller/doctorController';
 import { validate } from '../middleware/validate';
 import { createDoctorSchema, updateDoctorSchema } from '../modules/doctors/doctorValidation';
+import { authenticate, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', validate(createDoctorSchema), createDoctor);
+router.post('/', authenticate, validate(createDoctorSchema), createDoctor);
 
 /**
  * @swagger

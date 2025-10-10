@@ -8,7 +8,7 @@ import { sendEmailOTP } from "../config/mail";
 
 export const register = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password} = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -31,7 +31,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       name,
       email,
       password: hashedPassword,
-      role: 'patient',
+        role:'patient'
     });
 
     return res.status(201).json({

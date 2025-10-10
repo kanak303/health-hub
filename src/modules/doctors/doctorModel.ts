@@ -17,6 +17,7 @@ export class Doctor extends Model {
   public isActive!: boolean;
   public rating?: number;
   public totalReviews?: number;
+  public clinic_id?: string;
   public createdAt!: Date;
   public updatedAt!: Date;
 }
@@ -91,6 +92,14 @@ Doctor.init(
       type: DataTypes.INTEGER, 
       allowNull: true,
       defaultValue: 0
+    },
+    clinic_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'Clinics',
+        key: 'id'
+      }
     }
   },
   { 

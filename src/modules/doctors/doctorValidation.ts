@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const createDoctorSchema = z.object({
-  userId: z.string().uuid("Invalid user ID format"),
+  userId: z.string().uuid("Invalid user ID format").optional(),
+  email: z.string().email("Invalid email format").optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").optional(),
   name: z.string().min(2, "Name must be at least 2 characters"),
   specialty: z.string().min(2, "Specialty is required"),
   experience: z.number().min(0, "Experience must be 0 or greater"),
@@ -11,8 +13,15 @@ export const createDoctorSchema = z.object({
   consultationFee: z.number().min(0, "Consultation fee must be 0 or greater"),
   availability: z.object({}).passthrough(),
   bio: z.string().optional(),
-  profileImage: z.string().url().optional()
-});
+  profileImage: z.string().url().optional(),
+  clinicId: z.string().uuid("Invalid clinic ID format")
+}).refine(
+  (data) => data.userId || (data.email && data.password),
+  {
+    message: "Either userId or both email and password must be provided",
+    path: ["userId"]
+  }
+);
 
 export const updateDoctorSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),

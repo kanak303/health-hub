@@ -7,7 +7,7 @@ const validate = (schema: z.ZodSchema) => {
       schema.parse(req.body);
       next();
     } catch (error: any) {
-      if (error) {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
           message: 'Validation failed',
@@ -17,7 +17,11 @@ const validate = (schema: z.ZodSchema) => {
           }))
         });
       }
-      next(error);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: error.message
+      });
     }
   };
 };

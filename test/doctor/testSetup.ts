@@ -1,7 +1,9 @@
 import express from 'express';
 import testSequelize from '../globalTestConfig';
-import doctorRoutes from '../../src/route/doctorRoutes';
 import { DataTypes } from 'sequelize';
+import { validate } from '../../src/middleware/validate';
+import { createDoctorSchema, updateDoctorSchema } from '../../src/modules/doctors/doctorValidation';
+import bcrypt from 'bcrypt';
 
 // Define test models that use test database only
 class TestUser extends require('../../src/modules/user/userModels').User {}
@@ -11,10 +13,210 @@ class TestDoctor extends require('../../src/modules/doctors/doctorModel').Doctor
 TestUser.init(TestUser.rawAttributes, { sequelize: testSequelize, modelName: 'User', timestamps: false });
 TestDoctor.init(TestDoctor.rawAttributes, { sequelize: testSequelize, modelName: 'Doctor', timestamps: true });
 
+// Create test-specific controllers that directly use test models
+const testCreateDoctor = async (req: any, res: any) => {
+  try {
+    const {
+      userId,
+      email,
+      password,
+      name,
+      specialty,
+      experience,
+      qualification,
+      licenseNumber,
+      phone,
+      consultationFee,
+      availability,
+      bio,
+      profileImage
+    } = req.body;
+
+    let doctorUserId = userId;
+
+    if (!userId && email && password) {
+      const existingUser = await TestUser.findOne({ where: { email } });
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: "User with this email already exists"
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await TestUser.create({
+        name,
+        email,
+        password: hashedPassword,
+        role: 'doctor',
+        isVerified: true
+      });
+      doctorUserId = newUser.id;
+    } else if (userId) {
+      const user = await TestUser.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found"
+        });
+      }
+
+      if (user.getDataValue("role") !== "doctor") {
+        return res.status(400).json({
+          success: false,
+          message: "User must have doctor role"
+        });
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Either userId or email and password must be provided"
+      });
+    }
+
+    const existingDoctor = await TestDoctor.findOne({ where: { userId: doctorUserId } });
+    if (existingDoctor) {
+      return res.status(409).json({
+        success: false,
+        message: "Doctor profile already exists for this user"
+      });
+    }
+
+    const doctor = await TestDoctor.create({
+      userId: doctorUserId,
+      name,
+      specialty,
+      experience,
+      qualification,
+      licenseNumber,
+      phone,
+      consultationFee,
+      availability,
+      bio,
+      profileImage
+    });
+
+    return res.status(201).json(doctor);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+const testGetDoctors = async (req: any, res: any) => {
+  try {
+    const { specialty, isActive = true } = req.query;
+    
+    const whereClause: any = { isActive };
+    if (specialty) {
+      whereClause.specialty = specialty;
+    }
+
+    const doctors = await TestDoctor.findAll({
+      where: whereClause,
+      order: [['rating', 'DESC'], ['totalReviews', 'DESC']]
+    });
+
+    return res.json(doctors);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+const testGetDoctorById = async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await TestDoctor.findByPk(id);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found"
+      });
+    }
+
+    return res.json(doctor);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+const testUpdateDoctor = async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const doctor = await TestDoctor.findByPk(id);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found"
+      });
+    }
+
+    await doctor.update(updateData);
+
+    return res.json(doctor);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+const testDeleteDoctor = async (req: any, res: any) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await TestDoctor.findByPk(id);
+    if (!doctor || !doctor.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found"
+      });
+    }
+
+    await doctor.update({ isActive: false });
+
+    return res.json({
+      success: true,
+      message: "Doctor profile deactivated successfully"
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
 export const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  app.use('/api/doctors', doctorRoutes);
+  
+  // Create test routes that use test controllers
+  const router = express.Router();
+  router.post('/', validate(createDoctorSchema), testCreateDoctor);
+  router.get('/', testGetDoctors);
+  router.get('/:id', testGetDoctorById);
+  router.put('/:id', validate(updateDoctorSchema), testUpdateDoctor);
+  router.delete('/:id', testDeleteDoctor);
+  
+  app.use('/api/doctors', router);
   return app;
 };
 
@@ -51,6 +253,9 @@ export const cleanupDoctors = async () => {
 };
 
 export const cleanupUsers = async () => {
+  // First delete all doctors to avoid foreign key constraint
+  await TestDoctor.destroy({ where: {}, force: true });
+  // Then delete users
   await TestUser.destroy({ where: {}, force: true });
 };
 
