@@ -21,16 +21,20 @@ describe('Create Doctor', () => {
     const sampleDoctor = getSampleDoctor();
     const res = await request(app)
       .post('/api/doctors')
-      .send(sampleDoctor)
-      .expect(201);
-
+      .send(sampleDoctor);
+    
+    if (res.status !== 201) {
+      console.log('Error response:', res.body);
+    }
+    
+    assert.strictEqual(res.status, 201);
     assert(res.body.id, 'Response should have id property');
     assert.strictEqual(res.body.name, sampleDoctor.name);
     assert.strictEqual(res.body.specialty, sampleDoctor.specialty);
   });
 
   it('should return 400 for invalid doctor data', async () => {
-    const invalidDoctor = { name: 'Dr. Test' }; // missing required fields
+    const invalidDoctor = { name: 'Dr. Test' }; 
     
     await request(app)
       .post('/api/doctors')

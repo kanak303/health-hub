@@ -31,7 +31,7 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       name,
       email,
       password: hashedPassword,
-        role:'patient'
+      role: 'patient'
     });
 
     return res.status(201).json({
@@ -186,7 +186,6 @@ export const forgotPassword = async (req: Request, res: Response): Promise<Respo
 
     // Generate OTP for reset
     const otp = crypto.randomInt(100000, 999999).toString();
-    // user.resetToken = otp;
     user.resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
     await user.save();
 

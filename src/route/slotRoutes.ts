@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createSlots, getSlots, bookSlot, cancelSlot, updateSlot } from "../controller/slotController";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = Router();
 
@@ -36,7 +37,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/create", createSlots);
+router.post("/create", authenticate, authorize(['clinic_admin', 'doctor']), createSlots);
 
 /**
  * @swagger

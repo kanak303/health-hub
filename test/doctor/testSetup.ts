@@ -8,9 +8,11 @@ import bcrypt from 'bcrypt';
 // Define test models that use test database only
 class TestUser extends require('../../src/modules/user/userModels').User {}
 class TestDoctor extends require('../../src/modules/doctors/doctorModel').Doctor {}
+class TestClinic extends require('../../src/modules/clinic/clinicModels').Clinic {}
 
 // Initialize with test database
 TestUser.init(TestUser.rawAttributes, { sequelize: testSequelize, modelName: 'User', timestamps: false });
+TestClinic.init(TestClinic.rawAttributes, { sequelize: testSequelize, modelName: 'Clinic', paranoid: true });
 TestDoctor.init(TestDoctor.rawAttributes, { sequelize: testSequelize, modelName: 'Doctor', timestamps: true });
 
 // Create test-specific controllers that directly use test models
@@ -29,7 +31,8 @@ const testCreateDoctor = async (req: any, res: any) => {
       consultationFee,
       availability,
       bio,
-      profileImage
+      profileImage,
+      clinicId
     } = req.body;
 
     let doctorUserId = userId;
@@ -93,7 +96,8 @@ const testCreateDoctor = async (req: any, res: any) => {
       consultationFee,
       availability,
       bio,
-      profileImage
+      profileImage,
+      clinic_id: clinicId
     });
 
     return res.status(201).json(doctor);
@@ -222,8 +226,20 @@ export const createTestApp = () => {
 
 let testUserId: string;
 
+let testClinicId: string;
+
 export const setupTestDB = async () => {
   await testSequelize.sync({ force: true }); // Safe - only affects test DB
+  
+  // Create test clinic
+  const testClinic = await TestClinic.create({
+    hospitalName: 'Test Hospital',
+    doctorName: 'Test Doctor',
+    slug: 'test-hospital',
+    address: 'Test Address',
+    phone: '1234567890'
+  });
+  testClinicId = testClinic.id;
   
   // Create test user
   const testUser = await TestUser.create({
@@ -245,7 +261,8 @@ export const getSampleDoctor = () => ({
   licenseNumber: 'LIC123456',
   phone: '1234567890',
   consultationFee: 500.00,
-  availability: { monday: '9-17', tuesday: '9-17' }
+  availability: { monday: '9-17', tuesday: '9-17' },
+  clinicId: testClinicId
 });
 
 export const cleanupDoctors = async () => {
@@ -260,4 +277,4 @@ export const cleanupUsers = async () => {
 };
 
 // Export test models for use in tests
-export { TestUser, TestDoctor };
+export { TestUser, TestDoctor, TestClinic };

@@ -4,10 +4,19 @@ import SlotHold from "../modules/slots/slotHoldModel";
 import { processPayment, processRefund } from "../utils/paymentService";
 import { Op } from "sequelize";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
 // Create booking with payment
-export const createBooking = async (req: Request, res: Response) => {
+export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
     const { slotId, amount, paymentMethod } = req.body;
+    const userId = req.user!.id;
     
     // Validate required payment fields
     if (!amount || !paymentMethod) {
@@ -43,6 +52,7 @@ export const createBooking = async (req: Request, res: Response) => {
     // Create booking with pending payment
     const booking = await Booking.create({
       ...req.body,
+      userId,
       status: 'pending',
       paymentStatus: 'pending'
     });
@@ -52,7 +62,7 @@ export const createBooking = async (req: Request, res: Response) => {
       amount,
       currency: 'USD',
       paymentMethod,
-      userId: req.body.userId,
+      userId,
       bookingId: booking.id
     });
     
@@ -188,7 +198,6 @@ export const cancelBooking = async (req: Request, res: Response) => {
         });
       }
     } else {
-      // No payment to refund, just cancel
       await booking.update({ status: 'cancelled' });
       res.json({ 
         message: "Booking cancelled successfully",

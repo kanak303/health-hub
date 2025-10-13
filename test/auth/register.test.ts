@@ -38,13 +38,14 @@ describe('Auth Register', () => {
     assert.strictEqual(response.body.message, 'All fields are required');
   });
 
-  it('should return 400 when role is missing', async () => {
+  it('should create user with patient role when no role provided', async () => {
+    const uniqueEmail = `test${Date.now()}@example.com`;
     const response = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'kanak', email: 'test@example.com', password: 'password123' })
-      .expect(400);
+      .send({ name: 'kanak', email: uniqueEmail, password: 'password123' })
+      .expect(201);
 
-    assert.strictEqual(response.body.success, false);
-    assert.strictEqual(response.body.message, 'All fields are required');
+    assert.strictEqual(response.body.success, true);
+    assert.strictEqual(response.body.data.user.role, 'patient');
   });
 });

@@ -3,6 +3,14 @@ import { v4 as uuidv4 } from "uuid";
 import { Slot, SlotAttributes } from "../modules/slots/slotModel";
 import { Op } from "sequelize";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
 // generate slots
 function generateSlots(
   doctorId: string,
@@ -38,8 +46,16 @@ function generateSlots(
 }
 
 //  Create Slots
-export const createSlots = async (req: Request, res: Response) => {
+export const createSlots = async (req: AuthRequest, res: Response) => {
   try {
+    // Check if user has required role
+    if (!req.user || !['clinic_admin', 'doctor'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to create slots."
+      });
+    }
+
     const { doctorId, date, startTime, endTime, slotDuration } = req.body;
 
     if (!doctorId || !date || !startTime || !endTime || !slotDuration) {

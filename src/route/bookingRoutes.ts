@@ -8,6 +8,7 @@ import {
   cancelBooking 
 } from "../controller/bookingController";
 import { cleanExpiredHolds } from "../middleware/slotHold";
+import { authenticate, authorize } from "../middleware/auth";
 
 const router = Router();
 
@@ -54,7 +55,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/", cleanExpiredHolds, createBooking);
+router.post("/", authenticate, authorize(["patient"]), cleanExpiredHolds, createBooking);
 
 /**
  * @swagger

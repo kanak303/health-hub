@@ -9,6 +9,7 @@ import clinicRoutes from "./src/route/clinicRoutes";
 import bookingRoutes from "./src/route/bookingRoutes";
 import slotHoldRoutes from "./src/route/slotHoldRoutes";
 import clinicAdminRoutes from "./src/route/clinicAdminRoutes";
+import mockPaymentRoutes from "./src/route/mockPaymentRoutes";
 import { connectRedis } from "./src/config/redis";
 import { swaggerUi, specs } from "./src/docs/swagger";
 
@@ -27,6 +28,7 @@ app.use("/api/clinics", clinicRoutes);
 app.use("/api/booking", bookingRoutes);
 app.use("/api/slots", slotHoldRoutes);
 app.use('/api/clinic-admin', clinicAdminRoutes);
+app.use('/api/mock-payment', mockPaymentRoutes);
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
