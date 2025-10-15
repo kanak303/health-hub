@@ -17,8 +17,10 @@ const router = express.Router();
  * /api/doctors:
  *   post:
  *     summary: Create a new doctor profile
- *     description: Creates a new doctor profile for an existing user with doctor role
+ *     description: Creates a new doctor profile for an existing user with doctor role or creates new user account
  *     tags: [Doctors]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -31,21 +33,33 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/DoctorResponse'
+ *               $ref: '#/components/schemas/Doctor'
  *       400:
- *         description: Bad request - User must have doctor role
+ *         description: Bad request - User must have doctor role or missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Access denied - Clinic Admin or Admin only
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
- *         description: User not found
+ *         description: User or clinic not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *       409:
- *         description: Doctor profile already exists
+ *         description: Doctor profile already exists or email already taken
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       422:
+ *         description: Clinic ID is required
  *         content:
  *           application/json:
  *             schema:
@@ -85,7 +99,9 @@ router.post('/', authenticate, validate(createDoctorSchema), createDoctor);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/DoctorsListResponse'
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Doctor'
  *       500:
  *         description: Internal server error
  *         content:
@@ -116,7 +132,7 @@ router.get('/', getDoctors);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/DoctorResponse'
+ *               $ref: '#/components/schemas/Doctor'
  *       404:
  *         description: Doctor not found
  *         content:
@@ -159,7 +175,7 @@ router.get('/:id', getDoctorById);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/DoctorResponse'
+ *               $ref: '#/components/schemas/Doctor'
  *       404:
  *         description: Doctor not found
  *         content:

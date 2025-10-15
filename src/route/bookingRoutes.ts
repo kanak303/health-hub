@@ -19,6 +19,8 @@ const router = Router();
  *     summary: Create a new booking with payment
  *     description: Create a booking for a slot with integrated payment processing
  *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -33,7 +35,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/BookingResponse'
  *       400:
- *         description: Bad request - Slot already booked or payment failed
+ *         description: Bad request - Slot already booked, payment failed, or missing required fields
  *         content:
  *           application/json:
  *             schema:
