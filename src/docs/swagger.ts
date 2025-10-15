@@ -29,18 +29,6 @@ const options = {
       {
         name: 'Clinics',
         description: 'Clinic management endpoints'
-      },
-      {
-        name: 'Clinic Admin',
-        description: 'Clinic admin management endpoints'
-      },
-      {
-        name: 'Slot Holds',
-        description: 'Temporary slot hold management endpoints'
-      },
-      {
-        name: 'Mock Payment',
-        description: 'Mock payment processing for testing'
       }
     ],
     servers: [
@@ -66,8 +54,6 @@ const options = {
             email: { type: 'string', format: 'email' },
             role: { type: 'string', enum: ['admin', 'doctor', 'patient', 'clinic_admin'] },
             isVerified: { type: 'boolean' },
-            resetToken: { type: 'string', nullable: true },
-            resetTokenExpiry: { type: 'string', format: 'date-time', nullable: true }
           },
         },
         AuthResponse: {
@@ -116,18 +102,15 @@ const options = {
             isActive: { type: 'boolean', example: true },
             rating: { type: 'number', example: 4.5 },
             totalReviews: { type: 'integer', example: 120 },
-            clinic_id: { type: 'string', format: 'uuid', nullable: true },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' }
           }
         },
         CreateDoctorRequest: {
           type: 'object',
-          required: ['name', 'specialty', 'experience', 'qualification', 'licenseNumber', 'phone', 'consultationFee', 'availability', 'clinicId'],
+          required: ['userId', 'name', 'specialty', 'experience', 'qualification', 'licenseNumber', 'phone', 'consultationFee', 'availability'],
           properties: {
-            userId: { type: 'string', format: 'uuid', description: 'Optional - if not provided, email and password are required' },
-            email: { type: 'string', format: 'email', example: 'doctor@example.com', description: 'Required if userId not provided' },
-            password: { type: 'string', example: 'password123', description: 'Required if userId not provided' },
+            userId: { type: 'string', format: 'uuid' },
             name: { type: 'string', example: 'Dr. John Smith' },
             specialty: { type: 'string', example: 'Cardiology' },
             experience: { type: 'integer', minimum: 0, example: 10 },
@@ -143,8 +126,7 @@ const options = {
               }
             },
             bio: { type: 'string', example: 'Experienced cardiologist with 10+ years of practice' },
-            profileImage: { type: 'string', format: 'uri', example: 'https://example.com/profile.jpg' },
-            clinicId: { type: 'string', format: 'uuid', example: '123e4567-e89b-12d3-a456-426614174000' }
+            profileImage: { type: 'string', format: 'uri', example: 'https://example.com/profile.jpg' }
           }
         },
         UpdateDoctorRequest: {
@@ -166,8 +148,7 @@ const options = {
             },
             bio: { type: 'string', example: 'Experienced cardiologist with 10+ years of practice' },
             profileImage: { type: 'string', format: 'uri', example: 'https://example.com/profile.jpg' },
-            isActive: { type: 'boolean', example: true },
-            clinic_id: { type: 'string', format: 'uuid', nullable: true }
+            isActive: { type: 'boolean', example: true }
           }
         },
         DoctorResponse: {
@@ -302,8 +283,9 @@ const options = {
         },
         CreateBookingRequest: {
           type: 'object',
-          required: ['doctorId', 'slotId', 'bookingDate', 'amount', 'paymentMethod'],
+          required: ['userId', 'doctorId', 'slotId', 'bookingDate', 'amount', 'paymentMethod'],
           properties: {
+            userId: { type: 'string', format: 'uuid' },
             doctorId: { type: 'string', format: 'uuid' },
             slotId: { type: 'string', format: 'uuid' },
             bookingDate: { type: 'string', format: 'date-time' },
@@ -414,61 +396,10 @@ const options = {
             message: { type: 'string', example: 'Clinic successfully deleted' }
           }
         },
-        SlotHold: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-            slotId: { type: 'string', format: 'uuid' },
-            userId: { type: 'string', format: 'uuid' },
-            expiresAt: { type: 'string', format: 'date-time' },
-            createdAt: { type: 'string', format: 'date-time' }
-          }
-        },
-        HoldSlotRequest: {
-          type: 'object',
-          required: ['slotId', 'userId'],
-          properties: {
-            slotId: { type: 'string', format: 'uuid' },
-            userId: { type: 'string', format: 'uuid' }
-          }
-        },
-        CreateClinicAdminRequest: {
-          type: 'object',
-          required: ['name', 'email', 'password'],
-          properties: {
-            name: { type: 'string', example: 'John Smith' },
-            email: { type: 'string', format: 'email', example: 'john@clinic.com' },
-            password: { type: 'string', example: 'password123' }
-          }
-        },
-        CreateDoctorForClinicRequest: {
-          type: 'object',
-          required: ['name', 'specialty', 'experience', 'qualification', 'licenseNumber', 'phone', 'consultationFee', 'availability', 'email', 'password'],
-          properties: {
-            name: { type: 'string', example: 'Dr. John Smith' },
-            email: { type: 'string', format: 'email', example: 'doctor@clinic.com' },
-            password: { type: 'string', example: 'password123' },
-            specialty: { type: 'string', example: 'Cardiology' },
-            experience: { type: 'integer', minimum: 0, example: 10 },
-            qualification: { type: 'string', example: 'MBBS, MD Cardiology' },
-            licenseNumber: { type: 'string', example: 'MED123456' },
-            phone: { type: 'string', example: '+1234567890' },
-            consultationFee: { type: 'number', minimum: 0, example: 150.00 },
-            availability: {
-              type: 'object',
-              example: {
-                monday: { start: '09:00', end: '17:00' },
-                tuesday: { start: '09:00', end: '17:00' }
-              }
-            },
-            bio: { type: 'string', example: 'Experienced cardiologist' },
-            profileImage: { type: 'string', format: 'uri', example: 'https://example.com/profile.jpg' }
-          }
-        },
       },
     },
   },
-  apis: ['./src/route/*.ts'],
+  apis: ['./src/route/*.ts', './src/controller/*.ts'],
 };
 
 const specs = swaggerJsdoc(options);

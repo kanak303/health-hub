@@ -11,8 +11,6 @@ const router = Router();
  *     summary: Create time slots for a doctor
  *     description: Generate multiple time slots for a doctor on a specific date with given duration
  *     tags: [Slots]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -28,12 +26,6 @@ const router = Router();
  *               $ref: '#/components/schemas/CreateSlotsResponse'
  *       400:
  *         description: Bad request - Missing fields or slots already exist
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       403:
- *         description: Access denied - Clinic Admin or Doctor only
  *         content:
  *           application/json:
  *             schema:
